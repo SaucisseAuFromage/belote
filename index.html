@@ -217,7 +217,7 @@ Jean et Marie"></textarea></label>
 /* ===== CONFIGURATION =====
    Collez entre les guillemets l'adresse de votre base de données Firebase (Realtime Database),
    par exemple "https://belote-xxxxx-default-rtdb.europe-west1.firebasedatabase.app" */
-const DB_URL="";
+const DB_URL="https://belote-blaes-default-rtdb.europe-west1.firebasedatabase.app";
 const KEY="belote-tournoi-v4";
 const SK={role:"belote-role",team:"belote-team",gid:"belote-gid"};
 const ss={get:k=>{try{return sessionStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{v==null?sessionStorage.removeItem(k):sessionStorage.setItem(k,String(v))}catch(e){}}};

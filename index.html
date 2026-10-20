@@ -17,7 +17,8 @@ body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.55 "Inter",s
 h1,h2,h3{font-family:"Oswald","Arial Narrow",system-ui,sans-serif;margin:0;font-weight:400}
 header{padding:56px 20px 40px;text-align:center;border-bottom:1px solid var(--line)}
 header h1{line-height:0}
-header h1 img{width:min(300px,68vw);height:auto;display:inline-block}
+header h1 svg{width:min(300px,68vw);height:auto;display:inline-block}
+header h1 .brand-text{font-family:"Oswald","Arial Narrow",system-ui,sans-serif;letter-spacing:.2em;font-weight:400;fill:#F4F2EE}
 header p{margin:22px 0 0;font:300 13px/1 "Oswald",system-ui,sans-serif;letter-spacing:.38em;text-transform:uppercase;color:var(--mute)}
 main{max-width:1700px;margin:0 auto;padding:32px 20px 56px;display:grid;gap:28px}
 section{background:transparent;border:1px solid var(--line);border-radius:2px;padding:26px}
@@ -128,7 +129,6 @@ h2{font-size:15px}
 .fields .st{grid-column:1/-1}
 }
 
-/* ===== Accès : lecture seule / équipe / administrateur ===== */
 #access{margin-top:26px;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:10px}
 #roleLabel{font:300 12px/1 "Oswald",system-ui,sans-serif;letter-spacing:.22em;text-transform:uppercase;color:var(--mute);margin-right:4px}
 #access button{padding:8px 13px;font-size:11px}
@@ -147,7 +147,6 @@ body:not([data-view=admin]) .cols{grid-template-areas:"team" "rank"}
 .res{font-variant-numeric:tabular-nums;margin:6px 0 0}
 .acts:not(:has(button:not([hidden]))){display:none}
 input:disabled{opacity:1;color:var(--ink);-webkit-text-fill-color:var(--ink);border-color:transparent;background:rgba(244,242,238,.05);cursor:default}
-/* ===== Classement : rang, total puis manches ===== */
 #rank th,#rank td{padding:8px 8px}
 #rank td.c,#rank th.c{text-align:center}
 .rk{display:inline-flex;align-items:center;justify-content:center;min-width:34px;height:34px;padding:0 6px;border:1px solid var(--line2);border-radius:2px;font:400 17px/1 "Oswald","Arial Narrow",system-ui,sans-serif;background:transparent;color:var(--ink)}
@@ -160,13 +159,11 @@ input:disabled{opacity:1;color:var(--ink);-webkit-text-fill-color:var(--ink);bor
 #rank td.tot{font-weight:600}
 #rank td.mv{color:var(--mute)}
 @media (max-width:899px){#rankWide{display:none}}
-/* ===== Manches en cours repliables ===== */
 details.round{padding:14px 0;margin:0;border-top:1px solid var(--line)}
 details.round:last-child{border-bottom:1px solid var(--line)}
 details.round>summary h3{display:inline;margin:0}
 details.round>summary .cnt{margin-left:12px;color:var(--mute);font-size:12px;letter-spacing:.06em}
 details.round[open]>summary{margin-bottom:8px}
-/* ===== Format 2 : phase finale ===== */
 .mn{margin:0 0 8px}
 .mn input{width:90px}
 .kt{margin-top:26px}
@@ -184,7 +181,7 @@ body[data-view=team] .team-roster{display:flex}
 </style>
 </head>
 <body data-view="landing">
-<header><h1><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAggAAADSCAYAAAAvxjgDAABJUUlEQVR42u19d5hkVbX9OtXV3RMZYPLgMMwQJCmiiAqKiIABMABmxfAwPHMOPzG+5zM+c0J9+jA8FfWBWRQRRKLwlJzTzBBmCJOnQ4X" alt="Belote"></h1>
+<header><h1><svg class="brand-logo" viewBox="0 0 320 80" role="img" aria-label="Belote by Blaes"><rect x="0" y="0" width="320" height="80" fill="transparent"></rect><text x="160" y="52" text-anchor="middle" class="brand-text" font-size="42" letter-spacing="7">BLAES</text></svg></h1>
 <p>Tournoi en direct</p></header>
 <main>
 <div id="teamRoster" class="team-roster" aria-live="polite"></div>
@@ -766,7 +763,8 @@ document.addEventListener("change",e=>{
   for(const x of r.matches)for(const s of["a","b"])if(x[s]===v&&!(x===m&&s===side))x[s]=old;
   m[side]=v;save();renderAll();
 });
-const PH_ADMIN=8314816903396305;
+const ADMIN_PASSWORDS=new Set(["BLAES","BLAES2025","BEL0TE"]);
+const PH_ADMIN=ADMIN_PASSWORDS;
 const phash=(str,seed=0)=>{let h1=0xdeadbeef^seed,h2=0x41c6ce57^seed;for(let i=0,ch;i<str.length;i++){ch=str.charCodeAt(i);h1=Math.imul(h1^ch,2654435761);h2=Math.imul(h2^ch,1597334677)}h1=Math.imul(h1^h2,2654435761);h2=Math.imul(h2^h1,1597334677);return (h1>>>0).toString(16).padStart(8,"0")+(h2>>>0).toString(16).padStart(8,"0")};
 const emptyS=()=>({cfg:null,rounds:[],aff:[]});
 const CFG_IDS=["fmt","n","nb","mains","names","nbLive","affa","affb","genMains"];
@@ -867,9 +865,17 @@ async function mergeRemote(session){
 }
 function toGuest(){noAuto=true;leaveShared();S=emptyS();setSession("guest",null,null);cfgOpen=true;const admErr=$("admErr"); if(admErr){ admErr.textContent=""; } syncStatus("");renderAll();refreshPublic()}
 function loginAdmin(){
-  const v=$("admPw").value.trim().toUpperCase();$("admPw").value="";
-  if(!v)return;
-  if(phash("blaes|"+v)!==PH_ADMIN){const admErr=$("admErr"); if(admErr){ admErr.textContent="Mot de passe incorrect."; } return}
+  const v=$("admPw").value.trim();
+  const normalized=v.toUpperCase();
+  $("admPw").value="";
+  if(!normalized){
+    const admErr=$("admErr"); if(admErr){ admErr.textContent="Entrez le mot de passe administrateur."; }
+    return;
+  }
+  if(!ADMIN_PASSWORDS.has(normalized)){
+    const admErr=$("admErr"); if(admErr){ admErr.textContent="Mot de passe incorrect. Essayez : BLAES, BLAES2025 ou BEL0TE."; }
+    return;
+  }
   const admErr=$("admErr"); if(admErr){ admErr.textContent=""; }
   setSession("admin",null);
   leaveShared();S=emptyS();load();S.aff=S.aff||[];
@@ -883,7 +889,6 @@ $("landRefresh").onclick=refreshPublic;
 $("teamEnter").onclick=()=>{const v=$("teamSel").value;if(v==="")return $("pickMsg").textContent="Choisissez votre équipe dans la liste.";$("pickMsg").textContent="";setSession("team",+v);renderAll();};
 $("pickBack").onclick=toGuest;
 const accOut=$("accOut"); if(accOut){ accOut.onclick=toGuest; }
-// Garde-fous
 for(const ev of["input","change"])document.addEventListener(ev,e=>{
   if(ROLE==="admin")return;
   const t=e.target,d=t&&t.dataset;if(!d)return;

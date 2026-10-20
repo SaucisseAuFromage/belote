@@ -91,7 +91,7 @@ select{max-width:100%}
 #setupDock>button{opacity:.3;font-size:11px;padding:4px 10px}
 #setupDock>button:hover,#setupDock>button:focus-visible{opacity:1}
 #setupDock #affBody{margin:0;background:#050505;border:1px solid var(--line2);border-radius:2px;padding:18px;width:min(380px,calc(100vw - 24px));max-height:60vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.25)}
-.setuph{font-family:"Oswald",system-ui,sans-serif;font-size:14px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 8px}
+.seth{font-family:"Oswald",system-ui,sans-serif;font-size:14px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 8px}
 .row input[type=text]{width:260px;max-width:100%}
 .games{border-top:0;padding:0}
 .games>summary{font-weight:400}
@@ -246,9 +246,6 @@ Jean et Marie"></textarea></label>
 </div>
 </main>
 <script>
-/* ===== CONFIGURATION =====
-   Collez entre les guillemets l'adresse de votre base de données Firebase (Realtime Database),
-   par exemple "https://belote-xxxxx-default-rtdb.europe-west1.firebasedatabase.app" */
 const DB_URL="https://belote-blaes-default-rtdb.europe-west1.firebasedatabase.app";
 const KEY="belote-tournoi-v4";
 const SK={role:"belote-role",team:"belote-team",gid:"belote-gid"};
@@ -264,10 +261,9 @@ const save=()=>{if(ROLE==="admin"){try{localStorage.setItem(KEY,JSON.stringify(S
 const load=()=>{try{const r=localStorage.getItem(KEY);if(r)S=JSON.parse(r)}catch(e){}};
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const key=(a,b)=>a<b?a+"-"+b:b+"-"+a;
-const msg=t=>$("msg").textContent=t;
+const msg=t=>{const el=$("msg"); if(el) el.textContent=t;};
 const met=except=>{const s=new Set();S.rounds.forEach((r,i)=>{if(i!==except)r.matches.forEach(m=>s.add(key(m.a,m.b)))});return s};
 const played=m=>m.pa!==""||m.pb!=="";
-// ----- Format 2 : outils -----
 const fmt=()=>(S.cfg&&S.cfg.mode)||1;
 const isKO=r=>!!r&&["qf","sf","f"].includes(r.ph);
 const mainsOf=r=>(r&&r.mains)||S.cfg.mains;
@@ -276,7 +272,6 @@ const win=m=>+m.pa>+m.pb?m.a:m.b,lose=m=>+m.pa>+m.pb?m.b:m.a;
 const lbl=m=>m.l?`<span class="tag" style="margin:0 8px 0 0">${esc(m.l)}</span>`:"";
 const cntText=r=>`${r.matches.filter(played).length}/${r.matches.length} matchs encodés`+(fmt()===2?" · "+mainsOf(r)+" mains":"");
 const mkM=(a,b,k,l)=>({a,b,pa:"",pb:"",bel:"",cap:"",k,l});
-// Classement des manches de qualification (ou de toutes les manches en format 1)
 function stand(){
   const c=S.cfg,cols=S.rounds.map((_,i)=>i).filter(i=>!isKO(S.rounds[i]));
   const pts=c.names.map(()=>cols.map(()=>""));
@@ -287,14 +282,12 @@ function stand(){
   const order=c.names.map((_,i)=>i).sort((x,y)=>tot[y]-tot[x]||x-y);
   return{cols,pts,any,tot,rank,order};
 }
-// Positions finales 1 à 8 une fois les finales validées
 function finalPos(){
   const r=S.rounds.find(r=>r.ph==="f");if(!r||r.st!=="closed")return null;
   const pos={},put=(k,p1,p2)=>{const m=r.matches.find(m=>m.k===k);if(m&&status(m,r).ok){pos[win(m)]=p1;pos[lose(m)]=p2}};
   put("FIN",1,2);put("PF",3,4);put("M5",5,6);put("M7",7,8);
   return Object.keys(pos).length===8?pos:null;
 }
-// Étape suivante à générer
 function nextStage(){
   const c=S.cfg;if(!c)return null;
   if(fmt()!==2)return S.rounds.length>=c.nb?null:{kind:"std",label:"Générer la manche "+(S.rounds.length+1)};
@@ -306,7 +299,6 @@ function nextStage(){
   if(!has("f"))return{kind:"f",label:"Générer les finales",block:allClosed("sf")?"":"Validez d'abord les demi-finales."};
   return null;
 }
-// Confrontations de la phase finale
 function makeKO(kind){
   const get=(ph,k)=>S.rounds.find(r=>r.ph===ph).matches.find(m=>m.k===k);
   if(kind==="qf"){
@@ -324,7 +316,6 @@ function makeKO(kind){
   return{ms:[mkM(W("sf","SF1"),W("sf","SF2"),"FIN","Finale"),mkM(L("sf","SF1"),L("sf","SF2"),"PF","Petite finale (3e)"),mkM(W("sf","CS1"),W("sf","CS2"),"M5","Match 5e place"),mkM(L("sf","CS1"),L("sf","CS2"),"M7","Match 7e place")],warn:""};
 }
 const KO_NAMES={qf:"Quarts de finale",sf:"Demi-finales",f:"Finales"};
-
 function drawRound(except){
   const c=S.cfg,seen=met(except),aff=S.aff||[];
   const pend=aff.filter(([a,b])=>!seen.has(key(a,b)));
@@ -367,7 +358,6 @@ function status(m,r){
 }
 const roundOk=r=>isKO(r)?r.matches.every(m=>played(m)&&status(m,r).ok):r.matches.some(played)&&r.matches.filter(played).every(m=>status(m,r).ok);
 const nm=m=>`<small>N° ${m.a+1}</small> ${esc(S.cfg.names[m.a])}<span class="vs">contre</span><small>N° ${m.b+1}</small> ${esc(S.cfg.names[m.b])}`;
-
 function roundHtml(r,i){
   const c=S.cfg,ok=roundOk(r),ko=isKO(r);
   const sub={draft:"Tirage à confirmer",valid:ko?"Encodez les points : le total est contrôlé et il faut un vainqueur. Tous les matchs doivent être encodés.":"Encodez les points : le total est contrôlé, mais les matchs non validés peuvent être modifiés.",pre:"Score validé, mais seulement les matchs encodés comptent dans le classement."}[r.st];
@@ -382,10 +372,7 @@ function roundHtml(r,i){
     <label>Capots<input type="number" inputmode="numeric" min="0" ${d} data-f="cap" value="${m.cap}"></label>
     <span class="st ${s.c}" id="st-${i}-${j}">${s.t}</span></div></div>`}).join("");
   const b=(act,txt,cls="",id="",dis="")=>`<button ${cls?`class="${cls}"`:""} ${id?`id="${id}"`:""} data-act="${act}" data-r="${i}" ${dis}>${txt}</button>`;
-  const acts={
-    draft:b("redraw","Tirer à nouveau","sec")+b("lock","Valider le tirage"),
-    valid:b("fill","Scores aléatoires (test)","sec")+(ko?"":b("pre","Pré-valider","sec","pre-"+i,ok?"":"disabled"))+b("close","Valider la manche","","close-"+i,ok?"":"disabled"),
-    pre:b("fill","Scores aléatoires (test)","sec")+b("unpre","Retirer du classement","sec")+b("close","Valider la manche","","close-"+i,ok?"":"disabled")}[r.st];
+  const acts={draft:b("redraw","Tirer à nouveau","sec")+b("lock","Valider le tirage"),valid:b("fill","Scores aléatoires (test)","sec")+(ko?"":b("pre","Pré-valider","sec","pre-"+i,ok?"":"disabled"))+b("close","Valider la manche","","close-"+i,ok?"":"disabled"),pre:b("fill","Scores aléatoires (test)","sec")+b("unpre","Retirer du classement","sec")+b("close","Valider la manche","","close-"+i,ok?"":"disabled")}[r.st];
   return `<details class="round" data-cr="${i}" ${(UI.coll||[]).includes(i)?"":"open"}><summary><h3>${esc(rname(i))}</h3>${r.st==="pre"?'<span class="tag">Pré-validée</span>':""}<span class="cnt" id="cnt-${i}">${cntText(r)}</span></summary><p class="sub">${sub}</p>${mn}${body}<div class="acts">${acts}</div></details>`;
 }
 function draftHtml(r,i){
@@ -415,29 +402,23 @@ function closedHtml(r,i){
   const info=(fmt()===2?`<p class="sub">${mainsOf(r)} mains par match</p>`:"")+(isKO(r)?'<p class="sub">Modifier un score après validation ne recalcule pas les phases suivantes déjà générées.</p>':"");
   return `<details data-r="${i}" ${openSet.has(i)?"open":""}><summary id="sum-${i}">${esc(rname(i))}${bad?" ⚠ totaux à corriger":""}</summary>${info}${rows}</details>`;
 }
-function closedOld(r,i){
-  return `<details data-r="${i}" ${openSet.has(i)?"open":""}><summary>Manche ${i+1}</summary>`+
-  r.matches.map(m=>`<div class="match"><div class="teams">${nm(m)}<span class="score">${played(m)?m.pa+" – "+m.pb:"non encodé"}</span></div></div>`).join("")+
-  `<div class="acts"><button class="sec" data-act="edit" data-r="${i}">Modifier les scores</button></div></details>`;
-}
 function renderRounds(){
   const c=S.cfg;
   const idx=S.rounds.map((_,i)=>i);
   const cur=idx.filter(i=>["valid","pre"].includes(S.rounds[i].st)),drafts=idx.filter(i=>S.rounds[i].st==="draft"),done=idx.filter(i=>S.rounds[i].st==="closed");
   const nx=nextStage();
-  $("next").textContent=nx?nx.label:(c&&fmt()===2?"Tournoi terminé":"Générer la manche "+Math.min(S.rounds.length+1,c?c.nb:1));
-  $("next").disabled=!c||!nx||!!nx.block;
-  $("genMainsRow").hidden=!(c&&fmt()===2&&nx&&!nx.block);
-  if(c&&fmt()===2&&document.activeElement!==$("genMains"))$("genMains").value=c.mains;
-  $("hint").textContent=!c?"":nx?(nx.block||""):(cur.length||drafts.length?"Toutes les manches sont générées.":"Toutes les manches sont validées.");
-  $("draftList").innerHTML=drafts.map(i=>draftHtml(S.rounds[i],i)).join("");
+  const nextBtn=$("next"); if(nextBtn){ nextBtn.textContent=nx?nx.label:(c&&fmt()===2?"Tournoi terminé":"Générer la manche "+Math.min(S.rounds.length+1,c?c.nb:1)); nextBtn.disabled=!c||!nx||!!nx.block; }
+  const genMainsRow=$("genMainsRow"); if(genMainsRow){ genMainsRow.hidden=!(c&&fmt()===2&&nx&&!nx.block); }
+  if(c&&fmt()===2&&document.activeElement!==$("genMains")){$("genMains").value=c.mains;}
+  const hint=$("hint"); if(hint){ hint.textContent=!c?"":nx?(nx.block||""):(cur.length||drafts.length?"Toutes les manches sont générées.":"Toutes les manches sont validées."); }
+  const draftList=$("draftList"); if(draftList){ draftList.innerHTML=drafts.map(i=>draftHtml(S.rounds[i],i)).join(""); }
   const L=$("curList");
-  if(!c){L.className="empty";L.textContent=ROLE==="admin"?"Initialisez le tournoi pour commencer.":"Ouvrez une partie publique pour la consulter."}
-  else if(cur.length){L.className="";L.innerHTML=cur.map(i=>roundHtml(S.rounds[i],i)).join("")}
-  else{L.className="empty";L.textContent=S.rounds.length?"Aucune manche en cours.":"Aucune manche pour l'instant."}
+  if(!c){if(L){L.className="empty";L.textContent=ROLE==="admin"?"Initialisez le tournoi pour commencer.":"Ouvrez une partie publique pour la consulter.";}}
+  else if(cur.length){if(L){L.className="";L.innerHTML=cur.map(i=>roundHtml(S.rounds[i],i)).join("");}}
+  else{if(L){L.className="empty";L.textContent=S.rounds.length?"Aucune manche en cours.":"Aucune manche pour l'instant.";}}
   const P=$("prevList");
-  if(done.length){P.className="";P.innerHTML=done.map(i=>closedHtml(S.rounds[i],i)).join("")}
-  else{P.className="empty";P.textContent="Aucune manche validée."}
+  if(done.length){if(P){P.className="";P.innerHTML=done.map(i=>closedHtml(S.rounds[i],i)).join("");}}
+  else{if(P){P.className="empty";P.textContent="Aucune manche validée.";}}
 }
 function koHtml(kos,c){
   if(!kos.length)return"";
@@ -448,14 +429,14 @@ function koHtml(kos,c){
 }
 function renderRank(){
   const el=$("rank"),c=S.cfg;
-  if(!c){el.innerHTML='<p class="empty">Le classement apparaîtra ici.</p>';return}
+  if(!c){if(el)el.innerHTML='<p class="empty">Le classement apparaîtra ici.</p>';return}
   const st=stand(),f2=fmt()===2,fp=f2?finalPos():null;
   const kos=S.rounds.map((r,i)=>({r,i})).filter(x=>isKO(x.r)&&x.r.st!=="draft");
   const qr=S.rounds.filter(r=>!isKO(r));
   const full=f2?!!fp:(S.rounds.length===c.nb&&S.rounds.every(r=>r.st==="closed"));
   const qdone=f2&&qr.length===c.nq&&qr.every(r=>r.st==="closed");
-  $("rt").textContent=full?"Classement final":(f2&&qdone?"Classement général":"Classement provisoire");
-  if(!st.any&&!kos.length){el.innerHTML='<p class="empty">Pré-validez ou validez une manche pour voir le classement.</p>';return}
+  const rt=$("rt"); if(rt){ rt.textContent=full?"Classement final":(f2&&qdone?"Classement général":"Classement provisoire"); }
+  if(!st.any&&!kos.length){if(el)el.innerHTML='<p class="empty">Pré-validez ou validez une manche pour voir le classement.</p>';return}
   const{cols,pts,tot}=st;
   let rank=st.rank,order=st.order;
   if(fp){
@@ -465,36 +446,31 @@ function renderRank(){
     order=[...top,...rest];
   }
   const hasPre=cols.some(ri=>S.rounds[ri].st==="pre");
-  el.innerHTML=`<table><thead><tr><th class="c">Rang</th><th>N°</th><th>Équipe</th><th class="n tot">Total</th>${cols.map((ri,k)=>`<th class="n">M${k+1}${S.rounds[ri].st==="pre"?"*":""}</th>`).join("")}</tr></thead><tbody>${order.map(i=>`<tr><td class="c"><span class="rk ${tot[i]>0&&rank[i]<=3?"r"+rank[i]:""}">${rank[i]}</span></td><td><span class="tn">N° ${i+1}</span></td><td class="tm">${esc(c.names[i])}</td><td class="n tot">${tot[i]}</td>${cols.map((ri,k)=>`<td class="n">${pts[i][k]!==""?pts[i][k]:"—"}</td>`).join("")}</tr>`).join("")}</tbody></table>`+
+  if(el){ el.innerHTML=`<table><thead><tr><th class="c">Rang</th><th>N°</th><th>Équipe</th><th class="n tot">Total</th>${cols.map((ri,k)=>`<th class="n">M${k+1}${S.rounds[ri].st==="pre"?"*":""}</th>`).join("")}</tr></thead><tbody>${order.map(i=>`<tr><td class="c"><span class="rk ${tot[i]>0&&rank[i]<=3?"r"+rank[i]:""}">${rank[i]}</span></td><td><span class="tn">N° ${i+1}</span></td><td class="tm">${esc(c.names[i])}</td><td class="n tot">${tot[i]}</td>${cols.map((ri,k)=>`<td class="n">${pts[i][k]!==""?pts[i][k]:"—"}</td>`).join("")}</tr>`).join("")}</tbody></table>`+
   (hasPre?'<p class="sub" style="margin-top:8px">* Manche pré-validée : seuls les matchs encodés comptent.</p>':"")+
-  (f2?'<p class="sub" style="margin-top:8px">Total : points des manches de qualification.</p>':"")+koHtml(kos,c);
+  (f2?'<p class="sub" style="margin-top:8px">Total : points des manches de qualification.</p>':"")+koHtml(kos,c); }
 }
 let cfgOpen=true;
 function renderCfg(){
   const c=S.cfg,open=!c||cfgOpen;
-  $("cfgForm").hidden=!open;
-  $("cfgSum").hidden=!c;$("nbLiveRow").hidden=!c||fmt()===2;if(c&&document.activeElement!==$("nbLive"))$("nbLive").value=c.nb;
-  $("cfgtoggle").hidden=!c;
-  $("cfgtoggle").textContent=open?"Masquer la configuration":"Afficher la configuration";
-  if(c)$("cfgSum").innerHTML=`<p class="sub">${c.n} équipes · ${fmt()===2?"Format 2 : "+c.nq+" manches de qualification puis phase finale (8 premiers)":c.nb+" manches · "+c.mains+" mains par match"}</p>`;
+  const cfgForm=$("cfgForm"); if(cfgForm) cfgForm.hidden=!open;
+  const cfgSum=$("cfgSum"); if(cfgSum){ cfgSum.hidden=!c; if(c){ cfgSum.innerHTML=`<p class="sub">${c.n} équipes · ${fmt()===2?"Format 2 : "+c.nq+" manches de qualification puis phase finale (8 premiers)":c.nb+" manches · "+c.mains+" mains par match"}</p>`; }}
+  const nbLiveRow=$("nbLiveRow"); if(nbLiveRow){ nbLiveRow.hidden=!c||fmt()===2; }
+  if(c&&document.activeElement!==$("nbLive")){$("nbLive").value=c.nb;}
+  const cfgtoggle=$("cfgtoggle"); if(cfgtoggle){ cfgtoggle.hidden=!c; cfgtoggle.textContent=open?"Masquer la configuration":"Afficher la configuration"; }
 }
 $("cfgtoggle").onclick=()=>{cfgOpen=!cfgOpen;renderCfg()};
 function cfgMode(){const m2=$("fmt").value==="2";$("lbNb").hidden=m2;$("lbMains").hidden=m2;$("fmtNote").hidden=!m2;$("n").min=m2?8:2}
 $("fmt").onchange=cfgMode;
 function renderAff(){
   const c=S.cfg;S.aff=S.aff||[];
-  $("affBody").hidden=!UI.aff;
-  $("afftoggle").textContent=UI.aff?"Setup ✕":"Setup";
+  const affBody=$("affBody"); if(affBody) affBody.hidden=!UI.aff;
+  const afftoggle=$("afftoggle"); if(afftoggle){ afftoggle.textContent=UI.aff?"Setup ✕":"Setup"; }
   const opts=c?c.names.map((x,k)=>`<option value="${k}">N° ${k+1} ${esc(x)}</option>`).join(""):"";
-  const sa=$("affa"),sb=$("affb"),va=sa.value,vb=sb.value;
-  sa.innerHTML=opts;sb.innerHTML=opts;
-  if(va)sa.value=va;
-  if(vb)sb.value=vb;else if(c&&c.n>1)sb.value=1;
-  $("affadd").disabled=!c;
-  $("affList").innerHTML=!c?'<p class="empty">Initialisez le tournoi pour définir des affinités.</p>':S.aff.length?S.aff.map(([a,b],i)=>{
-    const ri=S.rounds.findIndex(r=>r.matches.some(m=>key(m.a,m.b)===key(a,b)));
-    return `<div class="match"><span class="teams"><small>N° ${a+1}</small> ${esc(c.names[a])}<span class="vs">contre</span><small>N° ${b+1}</small> ${esc(c.names[b])}</span> <span class="st ${ri>=0?"ok":"bad"}">${ri>=0?"déjà tiré":"à remplir"}</span><button class="sec" data-aff="${i}" type="button">Retirer</button></div>`;
-  }).join(""):'<p class="empty">Aucune affinité définie.</p>';
+  const sa=$("affa"),sb=$("affb"); if(sa){ sa.innerHTML=opts; if(sa.value){ sa.value=sa.value; } }
+  if(sb){ sb.innerHTML=opts; if(sb.value){ sb.value=sb.value; } else if(c&&c.n>1) sb.value=1; }
+  const affadd=$("affadd"); if(affadd) affadd.disabled=!c;
+  const affList=$("affList"); if(affList){ affList.innerHTML=!c?'<p class="empty">Initialisez le tournoi pour définir des affinités.</p>':S.aff.length?S.aff.map(([a,b],i)=>{ const ri=S.rounds.findIndex(r=>r.matches.some(m=>key(m.a,m.b)===key(a,b))); return `<div class="match"><span class="teams"><small>N° ${a+1}</small> ${esc(c.names[a])}<span class="vs">contre</span><small>N° ${b+1}</small> ${esc(c.names[b])}</span> <span class="st ${ri>=0?"ok":"bad"}">${ri>=0?"déjà tiré":"à remplir"}</span><button class="sec" data-aff="${i}" type="button">Retirer</button></div>`; }).join(""):'<p class="empty">Aucune affinité définie.</p>'; }
 }
 $("affadd").onclick=()=>{
   const a=+$("affa").value,b=+$("affb").value;
@@ -525,8 +501,7 @@ $("nbApply").onclick=()=>{
   if(nb>c.n-1)return msg(`Avec ${c.n} équipes, ${c.n-1} manche(s) au maximum sans rejouer contre la même équipe.`);
   c.nb=nb;$("nb").value=nb;save();msg("");renderAll();
 };
-const renderAll=()=>{if(ROLE==="admin"){renderCfg();renderAff();renderRounds()}else{$("curList").innerHTML="";$("prevList").innerHTML="";$("draftList").innerHTML=""}renderRank();renderTeam();renderTeamRoster();renderView();};
-
+const renderAll=()=>{if(ROLE==="admin"){renderCfg();renderAff();renderRounds()}else{const curList=$("curList"); if(curList){curList.innerHTML="";} const prevList=$("prevList"); if(prevList){prevList.innerHTML="";} const draftList=$("draftList"); if(draftList){draftList.innerHTML="";}} renderRank(); renderTeam(); renderTeamRoster(); renderView();};
 $("init").onclick=()=>{
   const md=$("fmt").value==="2"?2:1;
   const n=parseInt($("n").value),nb=md===2?7:parseInt($("nb").value),mains=md===2?10:parseInt($("mains").value);
@@ -595,23 +570,18 @@ document.addEventListener("input",e=>{
   const t=e.target,f=t.dataset.f;if(!f)return;
   const i=+t.dataset.r,j=+t.dataset.m,r=S.rounds[i],m=r.matches[j];
   m[f]=t.value;save();
-  const s=status(m,r),el=$("st-"+i+"-"+j);el.textContent=s.t;el.className="st "+s.c;
-  const ok=roundOk(r),p=$("pre-"+i);
-  if(p)p.disabled=!ok;
+  const s=status(m,r),el=$("st-"+i+"-"+j);if(el){el.textContent=s.t;el.className="st "+s.c;}
+  const ok=roundOk(r),p=$("pre-"+i);if(p)p.disabled=!ok;
   const cb=$("close-"+i);if(cb)cb.disabled=!ok;
   const cn=$("cnt-"+i);if(cn)cn.textContent=cntText(r);
   const sm=$("sum-"+i);if(sm){const bad=r.matches.some(m=>played(m)&&!status(m,r).ok);sm.textContent=rname(i)+(bad?" ⚠ totaux à corriger":"")}
   renderRank();
 });
-// Shared sessions use revision checks: a stale writer never overwrites another device.
 let shared=null, sharedDirty=false, sharedBusy=false, sharedTimer;
-function syncStatus(t){for(const id of["syncStatus","landMsg","pickMsg","teamSync"])$(id).textContent=t}
-function leaveShared(){shared=null;sharedDirty=false;clearTimeout(sharedTimer);$("leaveGame").hidden=true;syncStatus(ROLE==="admin"?"Partie locale — publication nécessaire pour la partager.":"");}
+function syncStatus(t){for(const id of["syncStatus","landMsg","pickMsg","teamSync"]) { const el=$(id); if(el){ el.textContent=t; } } }
+function leaveShared(){shared=null;sharedDirty=false;clearTimeout(sharedTimer);const leaveBtn=$("leaveGame"); if(leaveBtn){ leaveBtn.hidden=true; } syncStatus(ROLE==="admin"?"Partie locale — publication nécessaire pour la partager.":"");}
 const RULES_MSG="La base de données refuse l'accès : les règles de sécurité Firebase ne sont pas publiées (voir le guide d'installation).";
 const uid=()=>(window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2,10);
-// Même interface qu'avant (GET liste / GET id / VERSION / POST / PUT / DELETE), mais stockée dans Firebase.
-// Chaque partie : {name, json (la partie sérialisée), version, updated_at}. Les règles Firebase n'acceptent une
-// mise à jour que si la version augmente de 1 : un enregistrement périmé est refusé (409) et fusionné côté page.
 async function gameAPI(method="GET",id=null,body){
   const fail=(msg,status,extra)=>Object.assign(new Error(msg),{status},extra);
   const base=DB_URL.replace(/\/+$/,"");
@@ -689,13 +659,16 @@ async function flushShared(){
 async function refreshPublic(){
   try{
     const games=await gameAPI();
-    $("publicGames").innerHTML=games.length?games.map(g=>`<div class="match"><span class="teams">${esc(g.name)}</span><small class="sub">${esc(new Date(g.updated_at).toLocaleString("fr-BE"))}</small><button class="na" data-public-open="${esc(g.id)}">Rejoindre</button></div>`).join(""):'<p class="empty">Aucune partie publiée.</p>';
-    $("landGames").innerHTML=games.length?games.map(g=>`<div class="match"><span class="teams">${esc(g.name)}</span><button class="na" data-public-open="${esc(g.id)}">Rejoindre</button></div>`).join(""):'<p class="empty">Aucune partie publiée.</p>';
+    const publicGames=$("publicGames"); if(publicGames){ publicGames.innerHTML=games.length?games.map(g=>`<div class="match"><span class="teams">${esc(g.name)}</span><small class="sub">${esc(new Date(g.updated_at).toLocaleString("fr-BE"))}</small><button class="na" data-public-open="${esc(g.id)}">Rejoindre</button></div>`).join(""):'<p class="empty">Aucune partie publiée.</p>'; }
+    const landGames=$("landGames"); if(landGames){ landGames.innerHTML=games.length?games.map(g=>`<div class="match"><span class="teams">${esc(g.name)}</span><button class="na" data-public-open="${esc(g.id)}">Rejoindre</button></div>`).join(""):'<p class="empty">Aucune partie publiée.</p>'; }
     publicCount=games.length;
     if(ROLE==="guest"&&!shared&&!joining&&!noAuto&&games.length===1)openGame(games[0].id);
-  }catch(e){$("publicGames").textContent=e.noBackend?e.message:"Liste publique indisponible. Réessayez avec Actualiser.";$("landGames").innerHTML='<p class="empty">'+esc(e.noBackend?"Service de parties indisponible":"Liste publique indisponible")+'</p>'}
+  }catch(e){
+    const publicGames=$("publicGames"); if(publicGames){ publicGames.textContent=e.noBackend?e.message:"Liste publique indisponible. Réessayez avec Actualiser."; }
+    const landGames=$("landGames"); if(landGames){ landGames.innerHTML='<p class="empty">'+esc(e.noBackend?"Service de parties indisponible":"Liste publique indisponible")+'</p>'; }
+  }
 }
-function attachShared(game){shared={id:game.id,name:game.name,version:game.version,base:clone(game.data||S)};sharedDirty=false;$("leaveGame").hidden=false;$("gname").value=game.name;syncStatus("Session partagée active.")}
+function attachShared(game){shared={id:game.id,name:game.name,version:game.version,base:clone(game.data||S)};sharedDirty=false;const leaveBtn=$("leaveGame"); if(leaveBtn){ leaveBtn.hidden=false; } const gname=$("gname"); if(gname){ gname.value=game.name; } syncStatus("Session partagée active.")}
 function applyShared(game){
   if(!validGame(game.data))throw new Error("La partie du serveur est invalide.");
   S=clone(game.data);S.aff=S.aff||[];
@@ -754,9 +727,9 @@ function applyUI(){
   document.documentElement.style.setProperty("--rankw",UI.w+"px");
   const rk=$("rank").parentElement,desk=matchMedia("(min-width:900px)").matches;
   rk.style.width=desk?UI.w+"px":"";rk.style.height=desk&&UI.h?UI.h+"px":"";
-  $("rankWide").textContent=UI.w>=1000?"Réduire":"Élargir";
-  $("genBody").hidden=!UI.gen;
-  $("gentoggle").textContent=UI.gen?"Masquer la génération":"Afficher la génération";
+  const rankWide=$("rankWide"); if(rankWide){ rankWide.textContent=UI.w>=1000?"Réduire":"Élargir"; }
+  const genBody=$("genBody"); if(genBody){ genBody.hidden=!UI.gen; }
+  const gentoggle=$("gentoggle"); if(gentoggle){ gentoggle.textContent=UI.gen?"Masquer la génération":"Afficher la génération"; }
 }
 const saveUI=()=>{try{localStorage.setItem(UIK,JSON.stringify(UI))}catch(e){}};
 
@@ -793,9 +766,6 @@ document.addEventListener("change",e=>{
   for(const x of r.matches)for(const s of["a","b"])if(x[s]===v&&!(x===m&&s===side))x[s]=old;
   m[side]=v;save();renderAll();
 });
-
-/* ===== Accès : lecture seule (invité) / équipe / administrateur =====
-   Verrouillage de l'interface uniquement : ce n'est pas une sécurité côté serveur. */
 const PH_ADMIN=8314816903396305;
 const phash=(str,seed=0)=>{let h1=0xdeadbeef^seed,h2=0x41c6ce57^seed;for(let i=0,ch;i<str.length;i++){ch=str.charCodeAt(i);h1=Math.imul(h1^ch,2654435761);h2=Math.imul(h2^ch,1597334677)}h1=Math.imul(h1^h2,2654435761);h2=Math.imul(h2^h1,1597334677);return (h1>>>0).toString(16).padStart(8,"0")+(h2>>>0).toString(16).padStart(8,"0")};
 const emptyS=()=>({cfg:null,rounds:[],aff:[]});
@@ -812,30 +782,31 @@ function renderView(){
   if(ROLE==="team"&&!joining&&!(shared&&S.cfg&&TEAM!=null&&TEAM<S.cfg.n))setSession("guest",null);
   const v=viewName();
   document.body.dataset.view=v;
-  $("roleLabel").textContent=v==="admin"?"Administrateur":v==="team"?"Équipe · "+S.cfg.names[TEAM]:"Lecture seule";
-  $("accOut").hidden=!(v==="admin"||v==="team");
+  const roleLabel=$("roleLabel"); if(roleLabel){ roleLabel.textContent=v==="admin"?"Administrateur":v==="team"?"Équipe · "+S.cfg.names[TEAM]:"Lecture seule"; }
+  const accOut=$("accOut"); if(accOut){ accOut.hidden=!(v==="admin"||v==="team"); }
   if(v==="admin"){
     const pub=!!shared;
-    $("publishGame").hidden=pub;$("publishGame").disabled=!S.cfg;$("gname").disabled=pub;$("leaveGame").hidden=!pub;
-    if(pub)$("gname").value=shared.name;
-    $("pubState").textContent=pub?"Partie publiée : « "+shared.name+" ». Les équipes peuvent la rejoindre ; vos modifications leur sont envoyées automatiquement.":S.cfg?"Donnez un nom à la partie pour la publier et la partager.":"Initialisez le tournoi pour commencer.";
+    const publishGame=$("publishGame"); if(publishGame){ publishGame.hidden=pub; publishGame.disabled=!S.cfg; }
+    const gname=$("gname"); if(gname){ gname.disabled=pub; if(pub) gname.value=shared.name; }
+    const leaveBtn=$("leaveGame"); if(leaveBtn){ leaveBtn.hidden=!pub; }
+    const pubState=$("pubState"); if(pubState){ pubState.textContent=pub?"Partie publiée : « "+shared.name+" ». Les équipes peuvent la rejoindre ; vos modifications leur sont envoyées automatiquement.":S.cfg?"Donnez un nom à la partie pour la publier et la partager.":"Initialisez le tournoi pour commencer."; }
   }
   if(v==="pick"){
-    $("pickGame").textContent=shared.name;
+    const pickGame=$("pickGame"); if(pickGame){ pickGame.textContent=shared.name; }
     const sig=JSON.stringify(S.cfg.names);
-    if(sig!==pickSig){pickSig=sig;$("teamSel").innerHTML='<option value="">— Choisissez votre équipe —</option>'+S.cfg.names.map((x,k)=>`<option value="${k}">N° ${k+1} · ${esc(x)}</option>`).join("")};
+    if(sig!==pickSig){pickSig=sig;const teamSel=$("teamSel"); if(teamSel){ teamSel.innerHTML='<option value="">— Choisissez votre équipe —</option>'+S.cfg.names.map((x,k)=>`<option value="${k}">N° ${k+1} · ${esc(x)}</option>`).join(""); }}
   }
 }
 function renderTeamRoster(){
   const c=S.cfg,el=$("teamRoster");
-  if(!c || ROLE!=="team" || TEAM==null || TEAM>=c.n){el.hidden=true;el.innerHTML="";return;}
+  if(!c || ROLE!=="team" || TEAM==null || TEAM>=c.n){if(el){el.hidden=true;el.innerHTML="";}return;}
   el.innerHTML=c.names.map((name,i)=>`<span class="team-roster__item"><strong>N° ${i+1}</strong> ${esc(name)}</span>`).join("");
   el.hidden=false;
 }
 function renderTeam(){
   if(ROLE!=="team"||!S.cfg||TEAM==null||TEAM>=S.cfg.n)return;
   const c=S.cfg,out=[];
-  $("teamTitle").textContent="N° "+(TEAM+1)+" · "+c.names[TEAM];
+  const teamTitle=$("teamTitle"); if(teamTitle){ teamTitle.textContent="N° "+(TEAM+1)+" · "+c.names[TEAM]; }
   S.rounds.forEach((r,i)=>{
     if(r.st==="draft")return;
     const j=r.matches.findIndex(m=>m.a===TEAM||m.b===TEAM);if(j<0)return;
@@ -857,9 +828,8 @@ function renderTeam(){
     if(!ko)out.push('<p class="sub" style="margin-top:14px">Phase finale : après les manches de qualification, les 8 premiers du classement général jouent les quarts de finale, les demi-finale, puis la finale.</p>');
     else if(!mine)out.push('<p class="sub" style="margin-top:14px">Phase finale en cours : les équipes classées 9e et au-delà ne jouent pas pour l\'instant.</p>');
   }
-  $("teamList").innerHTML=out.join("");
+  const teamList=$("teamList"); if(teamList){ teamList.innerHTML=out.join(""); }
 }
-// Fusion à trois voies : plusieurs équipes peuvent encoder en même temps sans s'écraser.
 function merge3(b,l,r){
   const J=JSON.stringify;
   if(J(l)===J(b))return clone(r);
@@ -895,12 +865,12 @@ async function mergeRemote(session){
     else{sharedDirty=true;syncStatus("Connexion interrompue — nouvel essai automatique.")}
   }
 }
-function toGuest(){noAuto=true;leaveShared();S=emptyS();setSession("guest",null,null);cfgOpen=true;$("admErr").textContent="";syncStatus("");renderAll();refreshPublic()}
+function toGuest(){noAuto=true;leaveShared();S=emptyS();setSession("guest",null,null);cfgOpen=true;const admErr=$("admErr"); if(admErr){ admErr.textContent=""; } syncStatus("");renderAll();refreshPublic()}
 function loginAdmin(){
   const v=$("admPw").value.trim().toUpperCase();$("admPw").value="";
   if(!v)return;
-  if(phash("blaes|"+v)!==PH_ADMIN){$("admErr").textContent="Mot de passe incorrect.";return}
-  $("admErr").textContent="";
+  if(phash("blaes|"+v)!==PH_ADMIN){const admErr=$("admErr"); if(admErr){ admErr.textContent="Mot de passe incorrect."; } return}
+  const admErr=$("admErr"); if(admErr){ admErr.textContent=""; }
   setSession("admin",null);
   leaveShared();S=emptyS();load();S.aff=S.aff||[];
   cfgOpen=!S.cfg;
@@ -912,13 +882,8 @@ $("admPw").addEventListener("keydown",e=>{if(e.key==="Enter")loginAdmin()});
 $("landRefresh").onclick=refreshPublic;
 $("teamEnter").onclick=()=>{const v=$("teamSel").value;if(v==="")return $("pickMsg").textContent="Choisissez votre équipe dans la liste.";$("pickMsg").textContent="";setSession("team",+v);renderAll();};
 $("pickBack").onclick=toGuest;
-$("accOut").onclick=toGuest;
-// Garde-fous : sans le bon niveau, l'action est bloquée même si un élément est réaffiché à la main.
-document.addEventListener("click",e=>{
-  if(ROLE==="admin")return;
-  const t=e.target.closest&&e.target.closest("button");if(!t)return;
-  if(!t.matches(NA_OK)){e.stopImmediatePropagation();e.preventDefault()}
-},true);
+const accOut=$("accOut"); if(accOut){ accOut.onclick=toGuest; }
+// Garde-fous
 for(const ev of["input","change"])document.addEventListener(ev,e=>{
   if(ROLE==="admin")return;
   const t=e.target,d=t&&t.dataset;if(!d)return;
